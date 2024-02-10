@@ -13,7 +13,8 @@ namespace Il2CppDumper
         [STAThread]
         static void Main(string[] args)
         {
-            config = JsonSerializer.Deserialize<Config>(File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + @"config.json"));
+            config = JsonSerializer.Deserialize<Config>(
+                File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + @"config.json"));
             string il2cppPath = null;
             string metadataPath = null;
             string outputDir = null;
@@ -26,11 +27,13 @@ namespace Il2CppDumper
                     return;
                 }
             }
+
             if (args.Length > 3)
             {
                 ShowHelp();
                 return;
             }
+
             if (args.Length > 1)
             {
                 foreach (var arg in args)
@@ -53,6 +56,7 @@ namespace Il2CppDumper
                     }
                 }
             }
+
             outputDir ??= AppDomain.CurrentDomain.BaseDirectory;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -81,11 +85,13 @@ namespace Il2CppDumper
                     }
                 }
             }
+
             if (il2cppPath == null)
             {
                 ShowHelp();
                 return;
             }
+
             if (metadataPath == null)
             {
                 Console.WriteLine($"ERROR: Metadata file not found or encrypted.");
@@ -104,16 +110,15 @@ namespace Il2CppDumper
                     Console.WriteLine(e);
                 }
             }
-            if (config.RequireAnyKey)
-            {
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey(true);
-            }
+
+            Console.WriteLine("Done dumping!");
+            Environment.Exit(0);
         }
 
         static void ShowHelp()
         {
-            Console.WriteLine($"usage: {AppDomain.CurrentDomain.FriendlyName} <executable-file> <global-metadata> <output-directory>");
+            Console.WriteLine(
+                $"usage: {AppDomain.CurrentDomain.FriendlyName} <executable-file> <global-metadata> <output-directory>");
         }
 
         private static bool Init(string il2cppPath, string metadataPath, out Metadata metadata, out Il2Cpp il2Cpp)
@@ -151,6 +156,7 @@ namespace Il2CppDumper
                     {
                         il2Cpp = new Elf(il2CppMemory);
                     }
+
                     break;
                 case 0xCAFEBABE: //FAT Mach-O
                 case 0xBEBAFECA:
@@ -161,6 +167,7 @@ namespace Il2CppDumper
                         var fat = machofat.fats[i];
                         Console.Write(fat.magic == 0xFEEDFACF ? $"{i + 1}.64bit " : $"{i + 1}.32bit ");
                     }
+
                     Console.WriteLine();
                     var key = Console.ReadKey(true);
                     var index = int.Parse(key.KeyChar.ToString()) - 1;
@@ -178,6 +185,7 @@ namespace Il2CppDumper
                     il2Cpp = new Macho(il2CppMemory);
                     break;
             }
+
             var version = config.ForceIl2CppVersion ? config.ForceVersion : metadata.Version;
             il2Cpp.SetProperties(version, metadata.metadataUsagesCount);
             Console.WriteLine($"Il2Cpp Version: {il2Cpp.Version}");
@@ -207,7 +215,8 @@ namespace Il2CppDumper
             Console.WriteLine("Searching...");
             try
             {
-                var flag = il2Cpp.PlusSearch(metadata.methodDefs.Count(x => x.methodIndex >= 0), metadata.typeDefs.Length, metadata.imageDefs.Length);
+                var flag = il2Cpp.PlusSearch(metadata.methodDefs.Count(x => x.methodIndex >= 0),
+                    metadata.typeDefs.Length, metadata.imageDefs.Length);
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     if (!flag && il2Cpp is PE)
@@ -215,17 +224,21 @@ namespace Il2CppDumper
                         Console.WriteLine("Use custom PE loader");
                         il2Cpp = PELoader.Load(il2cppPath);
                         il2Cpp.SetProperties(version, metadata.metadataUsagesCount);
-                        flag = il2Cpp.PlusSearch(metadata.methodDefs.Count(x => x.methodIndex >= 0), metadata.typeDefs.Length, metadata.imageDefs.Length);
+                        flag = il2Cpp.PlusSearch(metadata.methodDefs.Count(x => x.methodIndex >= 0),
+                            metadata.typeDefs.Length, metadata.imageDefs.Length);
                     }
                 }
+
                 if (!flag)
                 {
                     flag = il2Cpp.Search();
                 }
+
                 if (!flag)
                 {
                     flag = il2Cpp.SymbolSearch();
                 }
+
                 if (!flag)
                 {
                     Console.WriteLine("ERROR: Can't use auto mode to process file, try manual mode.");
@@ -235,6 +248,7 @@ namespace Il2CppDumper
                     var metadataRegistration = Convert.ToUInt64(Console.ReadLine(), 16);
                     il2Cpp.Init(codeRegistration, metadataRegistration);
                 }
+
                 if (il2Cpp.Version >= 27 && il2Cpp.IsDumped)
                 {
                     var typeDef = metadata.typeDefs[0];
@@ -248,6 +262,7 @@ namespace Il2CppDumper
                 Console.WriteLine("ERROR: An error occurred while processing.");
                 return false;
             }
+
             return true;
         }
 
@@ -265,6 +280,7 @@ namespace Il2CppDumper
                 scriptGenerator.WriteScript(outputDir);
                 Console.WriteLine("Done!");
             }
+
             if (config.GenerateDummyDll)
             {
                 Console.WriteLine("Generate dummy dll...");
